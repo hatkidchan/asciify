@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <getopt.h>
 #include <string.h>
 #include "stb_image.h"
 #include "stb_image_resize.h"
