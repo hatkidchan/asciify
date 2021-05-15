@@ -17,6 +17,8 @@ if [ "x$1" = "xdebug" ]; then
     rm -v lib/*.o build/*;
 fi;
 
+mkdir -pv build;
+
 objects="";
 for file in $(ls lib/*.c); do
     object_path="${file/.c/.o}";
