@@ -19,4 +19,11 @@ uint8_t color_to_vt100(color_t c);
 color_t color_from_vt100(uint8_t c);
 color_t color_clamp_vt100(color_t c);
 
+color_t color_add(color_t a, color_t b);
+color_t color_sub(color_t a, color_t b);
+color_t color_mul(color_t a, color_t b);
+color_t color_mulF(color_t a, float f);
+
+color_t color_closest(color_t a, color_t *pal, int len);
+
 #endif

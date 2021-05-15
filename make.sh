@@ -12,6 +12,11 @@ if [ "x$1" = "xclean" ]; then
     exit $?
 fi;
 
+if [ "x$1" = "xdebug" ]; then
+    CC_FLAGS="-g $CC_FLAGS";
+    rm -v lib/*.o build/*;
+fi;
+
 objects="";
 for file in $(ls lib/*.c); do
     object_path="${file/.c/.o}";
