@@ -137,9 +137,9 @@ int main(int argc, char **argv)
 
     int charcode;
     uint8_t braille_char[4];
-    for (int y = 0; y < res_h; y += 4)
+    for (int y = 0; y < res_h - 3; y += 4)
     {
-        for (int x = 0; x < res_w; x += 2)
+        for (int x = 0; x < res_w - 1; x += 2)
         {
             pixs[0] = scaled_im[(x + 0) + (y + 0) * res_w];
             pixs[3] = scaled_im[(x + 1) + (y + 0) * res_w];
