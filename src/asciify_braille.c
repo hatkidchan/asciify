@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <stdbool.h>
 #include <getopt.h>
-#include <string.h>
 #include "stb_image.h"
 #include "stb_image_resize.h"
 #include "color.h"
@@ -16,44 +15,45 @@ enum { OMODE_TERMINAL = 0, OMODE_HTML = 1 };
 
 void usage(char *progname)
 {
-    fprintf(stderr, "usage: %s [-hvT] [-o FILE] [-W WIDTH] [-H HEIGHT] [-S CHARS] FILE\n",
-            progname);
+    fprintf(stderr, "usage: %s ", progname);
+    fprintf(stderr, "[-hvTM] [-o FILE] [-W WIDTH] [-H HEIGHT] FILE\n");
     fprintf(stderr, "\n");
     fprintf(stderr, "-h\t\tShow this help\n");
     fprintf(stderr, "-v\t\tBe verbose\n");
-    fprintf(stderr, "-G\t\tSet mode to black-and-white\n");
     fprintf(stderr, "-T\t\tUse TrueColor\n");
     fprintf(stderr, "-M\t\tOutput as HTML\n");
-    fprintf(stderr, "-S CHARS\tList of characters to use\n");
-    fprintf(stderr, "\t\tWill be a good idea to avoid multibyte characters.\n");
     fprintf(stderr, "-o FILE\t\tOutput filename (- or stdout by default)\n");
     fprintf(stderr, "-W WIDTH\tResult width (in characters)\n");
     fprintf(stderr, "-H HEIGHT\tResult height (in characters)\n");
     fprintf(stderr, "FILE\t\tInput image\n");
 }
 
+int best_match_i(color_t a, color_t b, color_t t)
+{
+    return color_difference(a, t) < color_difference(b, t) ? 0 : 1;
+}
+
 int main(int argc, char **argv)
 {
     int in_w, in_h, out_w = 80, out_h = 24, res_w = out_w, res_h = out_h, n_ch;
     char *in_filename = NULL,
-         *out_filename = NULL,
-         *charset = " .`-_*=@#";
+         *out_filename = NULL;
 
     bool verbose = false;
     int mode = MODE_256, out_mode = OMODE_TERMINAL;
-    
+
     FILE *out_fh = stdout;
 
     int c;
-    while ((c = getopt(argc, argv, "vMGTho:W:H:S:")) != -1)
+    while ((c = getopt(argc, argv, "vMGTho:W:H:")) != -1)
     {
         switch (c)
         {
-            case 'G':
-                mode = MODE_BW;
-                break;
             case 'T':
                 mode = MODE_TRUECOLOR;
+                break;
+            case 'G':
+                mode = MODE_BW;
                 break;
             case 'M':
                 out_mode = OMODE_HTML;
@@ -63,14 +63,6 @@ int main(int argc, char **argv)
                 break;
             case 'o':
                 out_filename = optarg;
-                break;
-            case 'S':
-                charset = optarg;
-                if (strlen(charset) < 1)
-                {
-                    fprintf(stderr, "Error: charset is too small\n");
-                    return 2;
-                }
                 break;
             case 'W':
                 if ((out_w = atoi(optarg)) < 1)
@@ -91,8 +83,7 @@ int main(int argc, char **argv)
                 return 0;
                 break;
             case '?':
-                if (optopt == 'o' || optopt == 'W' 
-                    || optopt == 'H' || optopt == 'S')
+                if (optopt == 'o' || optopt == 'W' || optopt == 'H')
                     fprintf(stderr,
                             "Error: Parameter -%c requires an argument\n",
                             optopt);
@@ -104,7 +95,6 @@ int main(int argc, char **argv)
         }
     }
     
-    
     if (argc <= optind || argc < 2)
     {
         fprintf(stderr, "Error: No image provided\n");
@@ -114,16 +104,17 @@ int main(int argc, char **argv)
     
     in_filename = argv[optind];
 
-    color_t *source_im, *scaled_im, pix;
+    color_t *source_im, *scaled_im, pixs[8], color_min, color_max;
+    int dist, dist_min, dist_max;
     source_im = (color_t *) stbi_load(in_filename, 
             &in_w, &in_h, &n_ch, STBI_rgb_alpha);
     
     DBGF("Source image size: %d:%d\n", in_w, in_h);
-    DBG("Resizing image to ");
-    get_size_keep_aspect(in_w * 2, in_h, out_w, out_h, &res_w, &res_h);
-    DBGF("%d:%d\n", res_w , res_h);
+    DBG("Image is outside of specified size, resizing to ");
+    get_size_keep_aspect(in_w, in_h, out_w * 2, out_h * 4, &res_w, &res_h);
+    DBGF("%d:%d\n", res_w, res_h);
     DBGF("Allocating %ld bytes for resized image ...",
-         res_w * res_h * sizeof(color_t));
+            res_w * res_h * sizeof(color_t));
     scaled_im = calloc(res_w * res_h, sizeof(color_t));
     DBGF("%p\n", (void *) scaled_im);
     stbir_resize_uint8((uint8_t *) source_im,  in_w,  in_h, 0,
@@ -144,71 +135,66 @@ int main(int argc, char **argv)
     
     DBG("Starting processing...\n");
 
-    if (out_mode == OMODE_HTML)
-        fprintf(out_fh, SEQ_HTML_BEGIN);
-
-    int charlen = strlen(charset);
-    for (int y = 0; y < res_h - 1; y++)
+    int charcode;
+    uint8_t braille_char[4];
+    for (int y = 0; y < res_h - 3; y += 4)
     {
-        color_t last_color = { 0, 0, 0, 0 };
-        for (int x = 0; x < res_w; x++)
+        for (int x = 0; x < res_w - 1; x += 2)
         {
-            pix = scaled_im[x + res_w * y];
-            pix.a = 255;
-            float brightness = color_grayscale(pix);
-            char sym = charset[(int)(brightness * charlen)];
+            pixs[0] = scaled_im[(x + 0) + (y + 0) * res_w];
+            pixs[3] = scaled_im[(x + 1) + (y + 0) * res_w];
+            pixs[1] = scaled_im[(x + 0) + (y + 1) * res_w];
+            pixs[4] = scaled_im[(x + 1) + (y + 1) * res_w];
+            pixs[2] = scaled_im[(x + 0) + (y + 2) * res_w];
+            pixs[5] = scaled_im[(x + 1) + (y + 2) * res_w];
+            pixs[6] = scaled_im[(x + 0) + (y + 3) * res_w];
+            pixs[7] = scaled_im[(x + 1) + (y + 3) * res_w];
+            if (mode == MODE_256)
+                for (int i = 0; i < 8; i++)
+                    pixs[i] = color_clamp_vt100(pixs[i]);
+            dist_min = 0xfd02ff; // 255 cubed
+            dist_max = 0;
+            
+            color_max = scaled_im[x + y * res_w];
+            color_min = color_max;
 
-            switch (mode)
+            for (int i = 0; i < 8; i++)
             {
-                case MODE_256:
-                    if ((color_to_vt100(last_color) != color_to_vt100(pix))
-                        || last_color.a == 0)
-                    {
-                        if (out_mode == OMODE_HTML)
-                        {
-                            if (x > 0)
-                                fprintf(out_fh, SEQ_HTML_CLOSE);
-                            pix = color_clamp_vt100(pix);
-                            fprintf(out_fh, SEQ_HTML_FG, pix.r, pix.g, pix.b);
-                        }
-                        else
-                        {
-                            fprintf(out_fh, SEQ_VT100_FG, color_to_vt100(pix));
-                        }
-                    }
-                    break;
-                case MODE_TRUECOLOR:
-                    if (last_color.r != pix.r
-                        || last_color.g != pix.g
-                        || last_color.b != pix.b
-                        || last_color.a == 0)
-                    {
-                        if (out_mode == OMODE_HTML)
-                        {
-                            if (x > 0)
-                                fprintf(out_fh, SEQ_HTML_CLOSE);
-                            fprintf(out_fh, SEQ_HTML_FG, pix.r, pix.g, pix.b);
-                        }
-                        else
-                        {
-                            fprintf(out_fh, SEQ_TRUECOLOR_FG,
-                                    pix.r, pix.g, pix.b);
-                        }
-                    }
-                    break;
-                default:
-                    break;
+                dist = color_difference(pixs[i], (color_t){0, 0, 0, 255});
+                if (dist < dist_min)
+                {
+                    dist_min = dist;
+                    color_min = pixs[i];
+                }
+                
+                if (dist > dist_max)
+                {
+                    dist_max = dist;
+                    color_max = pixs[i];
+                }
             }
-            last_color = pix;
-            fprintf(out_fh, "%c", sym);
+            
+            charcode = 0x2800;
+            for (int i = 0; i < 8; i++)
+            {
+                if (best_match_i(color_min, color_max, pixs[i]) == 1)
+                    charcode |= (1 << i);
+            }
+            
+            fprintf(out_fh, SEQ_TRUECOLOR_BOTH,
+                    color_min.r, color_min.g, color_min.b,
+                    color_max.r, color_max.g, color_max.b);
+            
+            braille_char[0] = 0xe2;
+            braille_char[1] = 0x80 | ((charcode >> 6) & 0x3f);
+            braille_char[2] = 0x80 | ((charcode >> 0) & 0x3f);
+            braille_char[3] = 0x00;
+            
+            fprintf(out_fh, "%s", braille_char);
+            
         }
-        if (mode == MODE_256 || mode == MODE_TRUECOLOR)
-            fprintf(out_fh,
-                    out_mode == OMODE_HTML ? SEQ_HTML_CLOSE : SEQ_RESET);
-        fprintf(out_fh, "\n");
+        fprintf(out_fh, "\x1b[0m\n");
     }
-    if (out_mode == OMODE_HTML)
-        fprintf(out_fh, SEQ_HTML_END);
 
     DBG("Job done, cleaning up...\n");
     if (out_fh != NULL && out_fh != stdout)

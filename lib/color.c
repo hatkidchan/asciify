@@ -1,6 +1,7 @@
 #include "color.h"
+#include "commons.h"
 
-int color_compare(struct color_t a, struct color_t b)
+int color_compare(color_t a, color_t b)
 {
     if (a.r != b.r || a.g != b.g || a.b != b.b)
         return 2;
@@ -9,7 +10,7 @@ int color_compare(struct color_t a, struct color_t b)
     return 0;
 }
 
-int color_difference(struct color_t a, struct color_t b)
+int color_difference(color_t a, color_t b)
 {
     int dr = a.r - b.r,
         dg = a.g - b.g,
@@ -17,17 +18,17 @@ int color_difference(struct color_t a, struct color_t b)
     return sqrt(dr * dr + dg * dg + db * db);
 }
 
-float color_grayscale(struct color_t a)
+float color_grayscale(color_t a)
 {
     return 0.299 * a.r / 255.0 + 0.587 / 255.0 * a.g + 0.114 * a.b / 255.0;
 }
 
-bool color_bw(struct color_t a)
+bool color_bw(color_t a)
 {
     return color_grayscale(a) >= 0.5;
 }
 
-uint8_t color_to_vt100(struct color_t c)
+uint8_t color_to_vt100(color_t c)
 {
     if (c.r == c.g && c.g == c.b)
     {
@@ -42,9 +43,9 @@ uint8_t color_to_vt100(struct color_t c)
     return oc;
 }
 
-struct color_t color_from_vt100(uint8_t c)
+color_t color_from_vt100(uint8_t c)
 {
-    struct color_t out = { 0, 0, 0, 255 };
+    color_t out = { 0, 0, 0, 255 };
     if (c >= 232)
     {
         int l = (c - 232) * 255 / 24;
@@ -62,9 +63,64 @@ struct color_t color_from_vt100(uint8_t c)
     return out;
 }
 
-struct color_t color_clamp_vt100(struct color_t c)
+color_t color_clamp_vt100(color_t c)
 {
-    struct color_t out = color_from_vt100(color_to_vt100(c));
+    color_t out = color_from_vt100(color_to_vt100(c));
     out.a = c.a;
     return out;
 }
+
+color_t color_add(color_t a, color_t b)
+{
+    return (color_t){
+        clamp(a.r + b.r, 0, 255),
+        clamp(a.g + b.g, 0, 255),
+        clamp(a.b + b.b, 0, 255),
+        clamp(a.a + b.a, 0, 255)
+    };
+}
+
+color_t color_sub(color_t a, color_t b)
+{
+    return (color_t){
+        clamp(a.r - b.r, 0, 255),
+        clamp(a.g - b.g, 0, 255),
+        clamp(a.b - b.b, 0, 255),
+        clamp(a.a - b.a, 0, 255)
+    };
+}
+
+color_t color_mul(color_t a, color_t b)
+{
+    return (color_t){
+        clamp(a.r * b.r / 255, 0, 255),
+        clamp(a.g * b.g / 255, 0, 255),
+        clamp(a.b * b.b / 255, 0, 255),
+        clamp(a.a * b.a / 255, 0, 255)
+    };
+}
+
+color_t color_mulF(color_t a, float f)
+{
+    return (color_t){
+        a.r * f, a.g * f, a.b * f, a.a
+    };
+}
+
+color_t color_closest(color_t a, color_t *pal, int len)
+{
+    float delta, closest_delta = 19075.f;
+    color_t pc, closest = { 0, 0, 0, 0 };
+    for (int i = 0; i < len; i++)
+    {
+        pc = pal[i];
+        delta = color_difference(pc, a);
+        if (delta < closest_delta)
+        {
+            closest_delta = delta;
+            closest = pc;
+        }
+    }
+    return closest;
+}
+

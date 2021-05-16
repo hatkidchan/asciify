@@ -16,4 +16,7 @@
 #define SEQ_HTML_NL "<br>"
 #define DBGF(f, args...) if (verbose) fprintf(stderr, f, args)
 #define DBG(f)           if (verbose) fprintf(stderr, f)
+
+int clamp(int v, int a, int b);
+
 #endif
