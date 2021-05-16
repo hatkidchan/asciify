@@ -1,4 +1,1 @@
-build/*.o
-build/asciify_base
-build/asciify_blocks
-build/asciify_charmap
+build/*
