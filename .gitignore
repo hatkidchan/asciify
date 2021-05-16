@@ -1,2 +1,5 @@
-build/*
+build/*.o
 lib/*.o
+asciify_base
+asciify_blocks
+asciify_charmap
