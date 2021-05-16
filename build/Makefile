@@ -1,17 +1,30 @@
+# Sorry but you need to use GNU Make
 PROJDIR := $(realpath $(CURDIR)/.. )
 LIBSDIR := $(PROJDIR)/lib
 SOURCEDIR := $(PROJDIR)/src
 INCLUDES := $(PROJDIR)/include
 
 LIBSOURCES = $(foreach file, $(LIBSDIR),$(wildcard $(file)/*.c))
-SRCSOURCES = $(foreach file, $(SOURCEDIR),$(wildcard $(file)/*.c))
 
-all:lib src
+all: asciify_base asciify_blocks asciify_charmap lib
 
 lib:
-	$(CC) -v $(LIBSOURCES) -I$(INCLUDES) $(CFLAGS) -c 
+	$(CC) -lm $(LIBSOURCES) -I$(INCLUDES) $(CFLAGS) -c 
+LIBOBJ := $(foreach file, $(CURDIR),$(wildcard $(file)/*.o))
 
-src:
-	$(CC) -v $(SRCSOURCES) -I$(INCLUDES) $(CFLAGS) 
+asciify_base: $(LIBOBJ) lib
+	$(CC) -lm  -I$(INCLUDES) $(CFLAGS) -o $@ \
+	$(LIBOBJ) $(SOURCEDIR)/asciify_base.c
 
-.PHONY: lib src all
+asciify_blocks: $(LIBOBJ) lib
+	$(CC) -lm  -I$(INCLUDES) $(CFLAGS) -o $@ \
+	$(LIBOBJ) $(SOURCEDIR)/asciify_blocks.c
+
+asciify_charmap: $(LIBOBJ) lib
+	$(CC) -lm -I$(INCLUDES) $(CFLAGS) -o $@ \
+	$(LIBOBJ) $(SOURCEDIR)/asciify_charmap.c
+
+clean: 
+	rm *.o asciify_base asciify_blocks asciify_charmap
+
+.PHONY: lib all
