@@ -20,23 +20,9 @@ lib: $(LIBOBJ)
 
 src: $(SRCOBJ)
 
-build/color.o: lib/color.c
+build/%.o: lib/%.c
 	$(CC) $(CFLAGS) $^ -I$(INCLUDES) -c -o $@ 
 
-build/image_aspect.o: lib/image_aspect.c
-	$(CC)  $(CFLAGS) $^ -I$(INCLUDES) -c -o $@
-
-build/stb_image.o: lib/stb_image.c
-	$(CC)  $(CFLAGS) $^ -I$(INCLUDES) -c -o $@
-
-build/stb_image_resize.o: lib/stb_image_resize.c
-	$(CC)  $(CFLAGS) $^ -I$(INCLUDES) -c -o $@
-
-build/stb_image_write.o: lib/stb_image_write.c
-	$(CC)  $(CFLAGS) $^ -I$(INCLUDES) -c -o $@
-
-build/stb_truetype.o: lib/stb_truetype.c
-	$(CC)  $(CFLAGS) $^ -I$(INCLUDES) -c -o $@
 
 build/asciify_base: lib 
 	$(CC) $(LIBOBJ) src/asciify_base.c \
