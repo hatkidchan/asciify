@@ -5,7 +5,8 @@ CFLAGS += -pedantic -Wall -Wextra -Wno-unused-but-set-variable \
 	-Wno-sign-compare -Wno-variadic-macros
 
 
-LIBOBJ := build/color.o build/image_aspect.o \
+LIBOBJ := build/color.o build/commons.o \
+	build/image_aspect.o \
 	build/stb_image.o build/stb_image_resize.o \
 	build/stb_image_write.o build/stb_truetype.o
 
