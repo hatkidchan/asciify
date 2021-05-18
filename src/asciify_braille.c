@@ -134,6 +134,8 @@ int main(int argc, char **argv)
     }
     
     DBG("Starting processing...\n");
+    if (out_mode == OMODE_HTML)
+        fprintf(out_fh, SEQ_HTML_BEGIN);
 
     int charcode;
     uint8_t braille_char[4];
@@ -181,9 +183,28 @@ int main(int argc, char **argv)
                     charcode |= (1 << i);
             }
             
-            fprintf(out_fh, SEQ_TRUECOLOR_BOTH,
-                    color_min.r, color_min.g, color_min.b,
-                    color_max.r, color_max.g, color_max.b);
+            if (out_mode == OMODE_TERMINAL)
+            {
+                if (mode == MODE_TRUECOLOR)
+                    fprintf(out_fh, SEQ_TRUECOLOR_BOTH,
+                            color_min.r, color_min.g, color_min.b,
+                            color_max.r, color_max.g, color_max.b);
+                else if (mode == MODE_256)
+                    fprintf(out_fh, SEQ_VT100_BOTH,
+                            color_to_vt100(color_min),
+                            color_to_vt100(color_max));
+            }
+            else if (out_mode == OMODE_HTML)
+            {
+                if (mode == MODE_256)
+                {
+                    color_min = color_clamp_vt100(color_min);
+                    color_max = color_clamp_vt100(color_max);
+                }
+                fprintf(out_fh, SEQ_HTML_BOTH,
+                        color_min.r, color_min.g, color_min.b, 
+                        color_max.r, color_max.g, color_max.b);
+            }
             
             braille_char[0] = 0xe2;
             braille_char[1] = 0x80 | ((charcode >> 6) & 0x3f);
@@ -191,10 +212,15 @@ int main(int argc, char **argv)
             braille_char[3] = 0x00;
             
             fprintf(out_fh, "%s", braille_char);
-            
+            if (out_mode == OMODE_HTML)
+                fprintf(out_fh, "%s%s", SEQ_HTML_CLOSE, SEQ_HTML_CLOSE);
         }
-        fprintf(out_fh, "\x1b[0m\n");
+        if (out_mode == OMODE_TERMINAL)
+            fprintf(out_fh, "\x1b[0m");
+        fprintf(out_fh, "\n");
     }
+    if (out_mode == OMODE_HTML)
+        fprintf(out_fh, SEQ_HTML_END);
 
     DBG("Job done, cleaning up...\n");
     if (out_fh != NULL && out_fh != stdout)
