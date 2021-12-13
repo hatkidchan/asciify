@@ -106,10 +106,11 @@ int main(int argc, char **argv)
 
     color_t *source_im, *scaled_im, pixs[8], color_min, color_max;
     int dist, dist_min, dist_max;
+    DBGF("Loading image %s...\n", in_filename);
     source_im = (color_t *) stbi_load(in_filename, 
             &in_w, &in_h, &n_ch, STBI_rgb_alpha);
     
-    DBGF("Source image size: %d:%d\n", in_w, in_h);
+    DBGF("Source image size: %d:%d %p\n", in_w, in_h, (void *)source_im);
     DBG("Image is outside of specified size, resizing to ");
     get_size_keep_aspect(in_w, in_h, out_w * 2, out_h * 4, &res_w, &res_h);
     DBGF("%d:%d\n", res_w, res_h);
@@ -179,7 +180,7 @@ int main(int argc, char **argv)
             charcode = 0x2800;
             for (int i = 0; i < 8; i++)
             {
-                if (best_match_i(color_min, color_max, pixs[i]) == 1)
+                if (best_match_i(color_min, color_max, pixs[i]) != 0)
                     charcode |= (1 << i);
             }
             

@@ -156,7 +156,7 @@ int main(int argc, char **argv)
             pix = scaled_im[x + res_w * y];
             pix.a = 255;
             float brightness = color_grayscale(pix);
-            char sym = charset[(int)(brightness * charlen)];
+            char sym = charset[(int)(brightness * (charlen - 1))];
 
             switch (mode)
             {

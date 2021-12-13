@@ -199,7 +199,7 @@ int main(int argc, char **argv)
                                 pix_top.r, pix_top.g, pix_top.b);
                     else if (!top && bot && out_mode == OMODE_TERMINAL)
                         fprintf(out_fh, SEQ_TRUECOLOR_FG,
-                                pix_top.r, pix_top.g, pix_top.b);
+                                pix_bot.r, pix_bot.g, pix_bot.b);
                     else if (!top && bot && out_mode == OMODE_HTML)
                         fprintf(out_fh, SEQ_HTML_FG,
                                 pix_bot.r, pix_bot.g, pix_bot.b);
