@@ -2,7 +2,7 @@
 
 INCLUDES := $(realpath $(CURDIR)/include)
 CFLAGS += -pedantic -Wall -Wextra -Wno-unused-but-set-variable \
-	-Wno-sign-compare -Wno-variadic-macros
+	-Wno-sign-compare -Wno-variadic-macros -g
 
 
 LIBOBJ := build/color.o build/commons.o \
@@ -26,14 +26,14 @@ build/%.o: lib/%.c
 
 build/asciify_blocks: lib
 	$(CC) $(LIBOBJ) src/asciify_blocks.c \
-	-lm -I$(INCLUDES) $(CFLAGS) -o $@\
+	-lm -I$(INCLUDES) $(CFLAGS) -o $@
 
 build/asciify_charmap: lib
 	$(CC) $(LIBOBJ) src/asciify_charmap.c \
-	-lm -I$(INCLUDES) $(CFLAGS) -o $@ \
+	-lm -I$(INCLUDES) $(CFLAGS) -o $@
 
 build/asciify_braille: lib
 	$(CC) $(LIBOBJ) src/asciify_braille.c \
-	-lm -I$(INCLUDES) $(CFLAGS) -o $@ \
+	-lm -I$(INCLUDES) $(CFLAGS) -o $@
 
 .PHONY: all lib src

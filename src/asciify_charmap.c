@@ -11,8 +11,21 @@
 #include "commons.h"
 #include "image_aspect.h"
 
-enum { MODE_BW = 0, MODE_256 = 1, MODE_TRUECOLOR = 2 };
+enum { MODE_BW = 0, MODE_256 = 1, MODE_TRUECOLOR = 2, MODE_DANSI = 3 };
 enum { OMODE_TERMINAL = 0, OMODE_HTML = 1 };
+
+const struct color_t dansi_palette[8] = {
+  { 0x4f, 0x54, 0x5c, 0 },
+  { 0xd1, 0x31, 0x35, 0 },
+  { 0x85, 0x99, 0x00, 0 },
+  { 0xb5, 0x89, 0x00, 0 },
+  { 0x26, 0x8b, 0xd2, 0 },
+  { 0xd3, 0x36, 0x82, 0 },
+  { 0xd3, 0x36, 0x82, 0 },
+  { 0xff, 0xff, 0xff, 0 },
+};
+
+uint8_t dansi_pick(color_t color);
 
 void usage(char *progname)
 {
@@ -22,6 +35,7 @@ void usage(char *progname)
     fprintf(stderr, "-h\t\tShow this help\n");
     fprintf(stderr, "-v\t\tBe verbose\n");
     fprintf(stderr, "-G\t\tSet mode to black-and-white\n");
+    fprintf(stderr, "-D\t\tSet mode to Discord ANSI syntax\n");
     fprintf(stderr, "-T\t\tUse TrueColor\n");
     fprintf(stderr, "-M\t\tOutput as HTML\n");
     fprintf(stderr, "-S CHARS\tList of characters to use\n");
@@ -45,7 +59,7 @@ int main(int argc, char **argv)
     FILE *out_fh = stdout;
 
     int c;
-    while ((c = getopt(argc, argv, "vMGTho:W:H:S:")) != -1)
+    while ((c = getopt(argc, argv, "vDMGTho:W:H:S:")) != -1)
     {
         switch (c)
         {
@@ -54,6 +68,9 @@ int main(int argc, char **argv)
                 break;
             case 'T':
                 mode = MODE_TRUECOLOR;
+                break;
+            case 'D':
+                mode = MODE_DANSI;
                 break;
             case 'M':
                 out_mode = OMODE_HTML;
@@ -104,7 +121,6 @@ int main(int argc, char **argv)
         }
     }
     
-    
     if (argc <= optind || argc < 2)
     {
         fprintf(stderr, "Error: No image provided\n");
@@ -146,6 +162,9 @@ int main(int argc, char **argv)
 
     if (out_mode == OMODE_HTML)
         fprintf(out_fh, SEQ_HTML_BEGIN);
+    
+    if (mode == MODE_DANSI)
+        fprintf(out_fh, "```ansi\n");
 
     int charlen = strlen(charset);
     for (int y = 0; y < res_h - 1; y++)
@@ -196,6 +215,14 @@ int main(int argc, char **argv)
                         }
                     }
                     break;
+                case MODE_DANSI:
+                    {
+                        uint8_t ndx = dansi_pick(pix);
+                        fprintf(out_fh, "\033");
+                        fflush(out_fh);
+                        fprintf(out_fh, "[0;%dm", ndx);
+                    }
+                    break;
                 default:
                     break;
             }
@@ -209,6 +236,8 @@ int main(int argc, char **argv)
     }
     if (out_mode == OMODE_HTML)
         fprintf(out_fh, SEQ_HTML_END);
+    if (mode == MODE_DANSI)
+        fprintf(out_fh, "\n```");
 
     DBG("Job done, cleaning up...\n");
     if (out_fh != NULL && out_fh != stdout)
@@ -223,4 +252,22 @@ int main(int argc, char **argv)
     }
     DBG("Freeing memory with source image\n");
     stbi_image_free(source_im);
+}
+
+uint8_t dansi_pick(color_t color)
+{
+  uint8_t nearest = 0; int32_t min_distance = 0x0fffffff;
+  for (uint8_t i = 0; i < 8; i++)
+  {
+    int16_t dr = dansi_palette[i].r - color.r;
+    int16_t dg = dansi_palette[i].g - color.g;
+    int16_t db = dansi_palette[i].b - color.b;
+    int32_t distance = dr * dr + dg * dg + db * db;
+    if (distance < min_distance)
+    {
+      min_distance = distance;
+      nearest = i;
+    }
+  }
+  return 30 + nearest;
 }

@@ -21,7 +21,8 @@ mkdir -pv build;
 
 objects="";
 for file in $(ls lib/*.c); do
-    object_path="${file/.c/.o}";
+    basename="${file#lib/}";
+    object_path="build/${basename/.c/.o}";
     objects="${objects} ${object_path}";
     if [ -e "$object_path" ]; then
         echo "CC $file already exists";
