@@ -216,12 +216,7 @@ int main(int argc, char **argv)
                     }
                     break;
                 case MODE_DANSI:
-                    {
-                        uint8_t ndx = dansi_pick(pix);
-                        fprintf(out_fh, "\033");
-                        fflush(out_fh);
-                        fprintf(out_fh, "[0;%dm", ndx);
-                    }
+                    fprintf(out_fh, "\033[%dm", dansi_pick(pix));
                     break;
                 default:
                     break;
@@ -237,7 +232,7 @@ int main(int argc, char **argv)
     if (out_mode == OMODE_HTML)
         fprintf(out_fh, SEQ_HTML_END);
     if (mode == MODE_DANSI)
-        fprintf(out_fh, "\n```");
+        fprintf(out_fh, "```");
 
     DBG("Job done, cleaning up...\n");
     if (out_fh != NULL && out_fh != stdout)

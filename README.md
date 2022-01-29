@@ -1,11 +1,28 @@
 # asciify - Yet another images-to-ascii-art converter
 
-## Why?
+# **NOTE:** This repository is archived now. For multiple reasons.
+
+First of all, I'm just not happy with current structure of project.
+There's literally 3 (and could be more) separate binaries that all do
+almost the same thing but differently. That's not ideal.
+
+Second reason is that there's a lot of code dublication, and refactoring
+all of that will be such a pain in the ass for me.
+
+Third reason is that I really should use Git submodules. It's not ideal to just
+copy [nothings/stb](https://github.com/nothings/stb) files.
+
+And last reason is that I just want to do it from scratch. That's it.
+
+Rest of file remains the same. I know it's outdated by now, but I'll just leave
+it as it is.
+
+## Why
 Maybe because I can? Why you ever asking that question?
 Also I just wanted a reason to learn C and have no other way other than
 make something like this.
 
-## So then how it works?
+## So then how it works
 After building everithing as described in section bellow, you should be
 left with %d nice binaries in `build` folder. Everyone of them accept
 simillar arguments with slight changes. Common syntax for them as follows:
@@ -21,22 +38,22 @@ simillar arguments with slight changes. Common syntax for them as follows:
 There are some converter-specific flags/options, so that'd be good to check
 out internal help with `-h` flag.
 
-## That's all interesting and stuff, but how can I build it?
+## That's all interesting and stuff, but how can I build it
 Good question. With help of [artsi0m](https://github.com/artsi0m), we now have
 more-or-less proper makefile, so you just need to run `make` and it should work!
 Also because we're using `stb` libraries, you don't need to install any
 dependencies except `make` and `gcc` (`tcc` won't work for some reason, but if
 you're able to fix it, PR's are welcome!)
 
-## Can I somehow help you?
+## Can I somehow help you
 Of course! If you have any suggestion or improvement, feel free to open
 new [issue](https://github.com/hatkidchan/asciify/issues), also if you made
 something already and want to accept those changes by us, you can make
 [pull request](https://github.com/hatkidchan/asciify/compare) too!
 
-## Why using `stb`?
+## Why using `stb`
 Maybe because it was the easiest way to handle popular file types without
 external dependencies?
 
-## Bruh there's already `libcaca` and others. Why not use them?
+## Bruh there's already `libcaca` and others. Why not use them
 <img src="https://i.imgur.com/dB0RFur.png">
